@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 var mongoDB = 'mongodb://127.0.0.1/scoper_DB';
 
 mongoose.connect(mongoDB, { useNewUrlParser: true });
@@ -22,7 +21,8 @@ var Version = new Schema({
     projectDescription: String,
     versionNumber: Number,
     date: { type: Date, default: Date.now },
-    allActors: [Actor]
+    allActors: [Actor],
+    assumptions: [String]
 });
 
 var Project = new Schema({
@@ -50,11 +50,8 @@ app.post("/createNewProject", function (req, res) {
             editorName: req.body.editorName,
             projectDescription: '',
             versionNumber: 1,
-            allActors: {
-                actorName: "",
-                actorDescription: "",
-                userStoreis: []
-            }
+            allActors: [],
+            assumptions:[]
         }
     }
     newProject.create(firstVersion, function (err, newProject) {
@@ -68,7 +65,6 @@ app.get('/allProjects', function (req, res) {
     newProject.find({}, "projectName", (err, newProject) => {
         res.send(newProject);
     })
-    // res.send('<h1>Hello World</h1>');
 });
 
 app.get('/allActors/:projectId', function (req, res) {
@@ -77,7 +73,6 @@ app.get('/allActors/:projectId', function (req, res) {
         actors = newProject.allVersions[newProject.allVersions.length - 1].allActors;
         res.send(actors);
     })
-    // res.send('<h1>Hello World</h1>');
 });
 
 app.get('/allData/:projctId', function (req, res) {
@@ -99,7 +94,8 @@ app.put('/newVersion/:projctId', function (req, res) {
             editorName: req.body.editorName,
             projectDescription: correntVersion.projectDescription,
             versionNumber: correntVersion.versionNumber + 1,
-            allActors: correntVersion.allActors
+            allActors: correntVersion.allActors,
+            assumptions: correntVersion.assumptions
 
         }
 
@@ -168,6 +164,17 @@ app.put('/editActor/:projctId/:location', function (req, res) {
     })
 });
 
+app.put('/assumptions/:projctId', function (req, res) {
+    newProject.findById(req.params.projctId, (err, newProject) => {
+       
+        newProject.allVersions[newProject.allVersions.length - 1].assumptions = req.body.assumptions;
+        
+        newProject.save();
+        res.send('assumptions added');
+    })
+   
+});
+
 app.delete('/actor/:projctId/:location', function (req, res) {
     newProject.findById(req.params.projctId, (err, newProject) => {
        
@@ -178,13 +185,28 @@ app.delete('/actor/:projctId/:location', function (req, res) {
     })
 });
 
-app.delete('/userStoreis/:projctId/:actorLocation/:storyLocation', function (req, res) {
+app.delete('/userStory/:projctId/:actorLocation/:storyLocation', function (req, res) {
     newProject.findById(req.params.projctId, (err, newProject) => {
        
         newProject.allVersions[newProject.allVersions.length - 1].allActors[req.params.actorLocation].userStoreis.splice(req.params.storyLocation, 1);
        
         newProject.save();
         res.send('actor deleted');
+    })
+});
+
+app.put('/userStory/:projctId/:actorLocation/:storyLocation', function (req, res) {
+    newProject.findById(req.params.projctId, (err, newProject) => {
+        console.log('====================================');
+        console.log(req.body);
+        console.log('====================================');
+       // לא עובד
+        // newProject.allVersions[newProject.allVersions.length - 1].allActors[req.params.actorLocation].userStoreis[req.params.storyLocation] = req.body.userStory;
+       var edit = newProject.allVersions[newProject.allVersions.length - 1].allActors[req.params.actorLocation].userStoreis[req.params.storyLocation];
+       edit = req.body.userStory
+       
+        newProject.save();
+        res.send('userStory updated');
     })
 });
 
